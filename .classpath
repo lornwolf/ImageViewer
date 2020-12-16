@@ -5,6 +5,7 @@
 	<classpathentry kind="lib" path="library/iconloader.jar"/>
 	<classpathentry kind="lib" path="library/jzlib1.1.3.jar"/>
 	<classpathentry kind="lib" path="library/sqlite-jdbc-3.32.3.2.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/BeautyEye"/>
+	<classpathentry kind="lib" path="library/beautyeye.jar"/>
+	<classpathentry kind="lib" path="library/ninepatch4j.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
