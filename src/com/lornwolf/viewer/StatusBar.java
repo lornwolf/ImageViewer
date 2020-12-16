@@ -228,6 +228,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         rightContainer.add(label02);
         
         JButton money = new JButton("打赏作者");
+        money.setMargin(new Insets(4, 4, 4, 4));
         money.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 new QR(mainWindow, JDialog.ModalityType.DOCUMENT_MODAL).setVisible(true);;
