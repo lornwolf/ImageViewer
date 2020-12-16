@@ -14,13 +14,14 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.io.Console;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -59,7 +60,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
     // 左侧标题栏的宽度。
     final int TITLE_WIDTH = 300;
     JScrollPane scrollPane;
-    String[][] tableData = null;
+    List<String[]> tableData = new ArrayList<String[]>();
     String[] columnNames = {"標題"};
 
     public StatusBar(Viewer mainWindow) {
@@ -98,22 +99,9 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
                     StatusBar.this.setText(file.getName());
                     try {
                         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
-
-                        int count = 0;
-                        String sql="SELECT count(*) AS CNT FROM 标题";
-                        PreparedStatement statement = null;
-                        statement = connection.prepareStatement(sql);
+                        tableData.clear();
+                        PreparedStatement statement = connection.prepareStatement("select * from 标题");
                         ResultSet resultSet = statement.executeQuery();
-                        while (resultSet.next()) {
-                            count = resultSet.getInt("CNT");
-                            break;
-                        }
-                        statement.close();
-                        tableData = new String[count][];
-
-                        int index = 0;
-                        statement = connection.prepareStatement("select * from 标题");
-                        resultSet = statement.executeQuery();
                         resultSet.getFetchSize();
                         while (resultSet.next()){
                             String title = resultSet.getString("标题");
@@ -121,11 +109,13 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
                                 continue;
                             }
                             String id = String.valueOf(resultSet.getInt("ID"));
+                            if (id == null || id.trim().length() == 0) {
+                                continue;
+                            }
                             String[] head = new String[2];
                             head[0] = title;
                             head[1] = id;
-                            tableData[index] = head;
-                            index = index + 1;
+                            tableData.add(head);
                         }
                         statement.close();
                         connection.close();
@@ -140,13 +130,13 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
                             public String getColumnName(int col) {
                                 return columnNames[col].toString();
                             }
-                            public int getRowCount() { return tableData.length; }
+                            public int getRowCount() { return tableData.size(); }
                             public int getColumnCount() { return columnNames.length; }
                             public Object getValueAt(int row, int col) {
-                                return tableData[row][col];
+                                return tableData.get(row)[col];
                             }
                             public void setValueAt(Object value, int row, int col) {
-                                tableData[row][col] = (String) value;
+                                tableData.get(row)[col] = (String) value;
                                 fireTableCellUpdated(row, col);
                             }
                         });
@@ -166,8 +156,8 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
                                 }
                                 table.setEnabled(false);
                                 int[] selectedRow = table.getSelectedRows();
-                                mainWindow.pageId = Integer.valueOf(tableData[selectedRow[0]][1]);
-                                StatusBar.this.setText(tableData[selectedRow[0]][0]);
+                                mainWindow.pageId = Integer.valueOf(tableData.get(selectedRow[0])[1]);
+                                StatusBar.this.setText(tableData.get(selectedRow[0])[0]);
                                 mainWindow.showPage();
                                 table.setEnabled(true);
                             }

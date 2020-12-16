@@ -30,6 +30,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.InflaterInputStream;
@@ -51,6 +52,7 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
     
     private static final long serialVersionUID = 1L;
 
+    // 滚动条的宽度。
     private final int SCROLL_WIDTH = ((Integer)(UIManager.get("ScrollBar.width"))).intValue();
 
     // 标题栏。
@@ -61,11 +63,20 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
 
     // 主面板。
     public JPanel mainPanel;
+
+    // 右侧显示内容的面板。
     public ImagePanel imagePanel;
+
+    // 右侧显示内容的滚动面板。
     public JScrollPane scrollPane;
 
+    // 当前选中页的ID。
     public int pageId = 0;
+
+    // 数据库文件的路径。
     public String path = null;
+
+    // 存储所有图片/文字信息的列表。
     public List<Section> images = new ArrayList<Section>();
 
     public static void main( String[] args) throws IOException, ClassNotFoundException {
@@ -114,21 +125,15 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
         setUndecorated(true);
         getRootPane().setWindowDecorationStyle(JRootPane.NONE);
 
-        int width = 0;
-        int height = 0;
-
-        if (width == 0 || height == 0) {
-            width = 1600;
-            height = 900;
-        }
+        // 设置画面大小。
+        int width = 1600;
+        int height = 900;
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         if (screenSize.getWidth() < width || screenSize.getHeight() < height) {
             width = (int) screenSize.getWidth();
             height = (int) screenSize.getHeight();
         }
-
         setSize(width, height);
-        setLocationRelativeTo(null);
 
         mainPanel = new JPanel();
         mainPanel.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 1, Color.GRAY));
@@ -163,10 +168,13 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
     }
 
     public void show(List<Section> images) throws IOException {
+        // 先释放一下资源。
         if (mainPanel != null) {
             UIReleaseUtil.freeSwingObject(mainPanel);
             getContentPane().remove(mainPanel);
         }
+
+        // 初始化显示区域。
         mainPanel = new JPanel();
         mainPanel.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 1, Color.GRAY));
         mainPanel.setLayout(new BorderLayout());
@@ -177,6 +185,7 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
         imagePanel = new ImagePanel(images, this, width);
         scrollPane = new JScrollPane(imagePanel);
         scrollPane.getVerticalScrollBar().setUnitIncrement(36);
+
         // 设置可拖拽。
         MouseAdapter mouseAdapter = new MouseAdapter() {
             private final Cursor defCursor = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
@@ -209,11 +218,20 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
         setVisible(true);
     }
 
+    /**
+     * 检索数据库，读取图片/文字信息。
+     */
     public void showPage() {
+        // 先释放一下资源。
         images.clear();
         if (imagePanel != null) {
             imagePanel.close();
         }
+
+        // 定义需忽略的内容。
+        String[] ignore = {".JPG", ".GIF"};
+
+        // 开始读取并解析内容。
         try {
             Connection connection = DriverManager.getConnection("jdbc:sqlite:" + path);
             PreparedStatement statement = connection.prepareStatement("select * from 资料库 where fid = " + String.valueOf(pageId));
@@ -254,11 +272,11 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
                         isImage = false;
                         continue;
                     } else {
+                        // 空白行处理。
                         if (line.length() == 0) {
-                            if (sb.length() == 0) {
-                                sectionStart = true;
-                            } else {
-                                sectionStart = false;
+                            sectionStart = true;
+                            if (sb.length() > 0) {
+                                // 如果是空白行，并且缓存里有数据，则认为是段落的结束。
                                 section = new Section();
                                 section.setType("string");
                                 section.setContent(sb.toString());
@@ -267,6 +285,7 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
                                 section = null;
                             }
                         }
+                        // 图片处理。
                         if ("TJPEGImage".equals(line) || "TGIFImage".equals(line) || "TMetafile".equals(line)) {
                             isImage = true;
                             section = new Section();
@@ -298,10 +317,28 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
                             continue;
                         }
                         // 可以被解析的文字内容。
-                        if (line.indexOf(" ") < 0 && line.length() % 4 == 0) {
+                        if (line.indexOf(" ") < 0 && line.length() % 4 == 0 && !Arrays.asList(ignore).contains(line)) {
                             sb.append(line);
+                            // 处理没有以空白行作为段落的文字。
+                            if (!sectionStart) {
+                                section = new Section();
+                                section.setType("string");
+                                section.setContent(sb.toString());
+                                images.add(section);
+                                sb.setLength(0);
+                                section = null;
+                            }
                         }
                     }
+                }
+                // 如果最后一行不是空行，则需要做一些收尾工作。
+                if (sb.length() > 0) {
+                    section = new Section();
+                    section.setType("string");
+                    section.setContent(sb.toString());
+                    images.add(section);
+                    sb.setLength(0);
+                    section = null;
                 }
 
                 /* 试验用代码 开始 */

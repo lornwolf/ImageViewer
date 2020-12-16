@@ -41,6 +41,9 @@ public class ImagePanel extends JPanel {
         setBackground(new Color(234, 234, 239));
         textLines.clear();
 
+        // 初始化进度条。
+        mainWindow.initProgressBar();
+
         if (images.size() == 0) {
             JLabel label = new JLabel();
             label.setText("此部分内容缺失。");
@@ -49,12 +52,11 @@ public class ImagePanel extends JPanel {
             label.setForeground(Color.WHITE);
             label.setFont(new Font("YaHei Mono", 0, 16));
             add(label);
+            mainWindow.setProgressValue(100);
         }
 
         new Thread() {
             public void run() {
-                // 初始化进度条。
-                mainWindow.initProgressBar();
                 for (int i = 0; i < images.size(); i++) {
                     int percent = i + 1;
                     Section line = images.get(i);
@@ -113,6 +115,12 @@ public class ImagePanel extends JPanel {
                     height = (int) ((double) height * ((double) this.width / (double) width));
                     width = this.width;
                 }
+            } else {
+                // 图片太大容易内存溢出，最大宽度设置为2000。
+                if (width > 2000) {
+                    height = (int) ((double) height * ((double) 2000 / (double) width));
+                    width = 2000;
+                }
             }
             image = Utils.createResizedCopy(image, width, height, true);
     
@@ -122,7 +130,7 @@ public class ImagePanel extends JPanel {
             imageLabel.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
             imageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             src.close();
-    
+
             return imageLabel;
         } catch (IOException e) {
         }
