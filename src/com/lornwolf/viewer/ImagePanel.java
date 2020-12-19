@@ -107,6 +107,15 @@ public class ImagePanel extends JPanel {
             InputStream src = new ByteArrayInputStream(hexToByteArr(section.getContent()));
             image = ImageIO.read((ByteArrayInputStream) src);
 
+            /* 测试用代码。
+            try (FileOutputStream fileOuputStream = new FileOutputStream(System.getProperty("java.io.tmpdir") + "image_viewer_tmp_img")) {
+                fileOuputStream.write(hexToByteArr(section.getContent()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            image = BigBufferedImage.create(new File(TMP_FILE), BufferedImage.TYPE_INT_RGB);
+            */
+
             int width = section.getWidth() > 0 ? section.getWidth() : image.getWidth();
             int height = section.getHeight() > 0 ? section.getHeight() : image.getHeight();
             // 判断是不是自适应模式。
@@ -114,17 +123,21 @@ public class ImagePanel extends JPanel {
                 if (width > this.width) {
                     height = (int) ((double) height * ((double) this.width / (double) width));
                     width = this.width;
+                    image = Utils.createResizedCopy(image, width, height, true);
                 }
             } else {
-                // 图片太大容易内存溢出，最大宽度设置为2000。
-                if (width > 2000) {
-                    height = (int) ((double) height * ((double) 2000 / (double) width));
-                    width = 2000;
+                // 图片太大容易内存溢出，最大宽度设置为16000，-Xmx512M的情况下勉强做到不出异常。
+                if (width > 16000) {
+                    height = (int) ((double) height * ((double) 16000 / (double) width));
+                    width = 16000;
+                    image = Utils.createResizedCopy(image, width, height, true);
                 }
             }
-            image = Utils.createResizedCopy(image, width, height, true);
-    
+
             ImageIcon imageIcon = new ImageIcon(image);
+            // 及时释放资源。
+            image.getGraphics().dispose();
+            // 生成图片标签对象。
             JLabel imageLabel = new JLabel(imageIcon);
             images.add(imageIcon);
             imageLabel.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));

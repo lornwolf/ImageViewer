@@ -47,13 +47,20 @@ public class TitleBar extends JPanel implements MouseListener, MouseMotionListen
     private JButton minBtn;
     private JButton maxBtn;
     private JButton closeBtn;
+    // 窗口大小。
     private Dimension dimension = null;
+    // 窗口位置。
     private Point point = null;
+    // 显示加载进度的进度条。
     private JProgressBar progress;
+    // 用来在标题栏左侧显示进度条的面板。
     private JPanel prgContainer = null;
-    private JPanel prgPanel = null;
-    private JPanel centerPanel = new JPanel();
+    // 标题栏的左侧，用来显示主要控制按钮和信息面板。
+    private JPanel mainContainer = new JPanel();
+    // 上面两个面板的父容器。
     private JPanel mainPanel = new JPanel();
+    // 用来填充空白的中央面板。
+    private JPanel centerPanel = new JPanel();
 
     public TitleBar(Viewer mainFrame) {
         this.mainFrame = mainFrame;
@@ -152,7 +159,6 @@ public class TitleBar extends JPanel implements MouseListener, MouseMotionListen
             }
         });
 
-        JPanel mainContainer = new JPanel();
         GridBagLayout layout = new GridBagLayout(); 
         mainContainer.setLayout(layout);
         GridBagConstraints gbc = new GridBagConstraints();
@@ -161,15 +167,15 @@ public class TitleBar extends JPanel implements MouseListener, MouseMotionListen
         gbc.gridy = 0;
         layout.setConstraints(label, gbc);
         mainContainer.add(label);
-        gbc.gridx = (int) label.getSize().getWidth() + 10;
+        gbc.gridx = 1;
         gbc.gridy = 0;
         layout.setConstraints(backPage, gbc);
         mainContainer.add(backPage);
-        gbc.gridx = 20 + (int) backPage.getSize().getWidth() + 5;
+        gbc.gridx = 2;
         gbc.gridy = 0;
         layout.setConstraints(prevPage, gbc);
         mainContainer.add(prevPage);
-        gbc.gridx = 20 + ((int) backPage.getSize().getWidth() + 5) * 2;
+        gbc.gridx = 3;
         gbc.gridy = 0;
         layout.setConstraints(reload, gbc);
         mainContainer.add(reload);
@@ -247,36 +253,43 @@ public class TitleBar extends JPanel implements MouseListener, MouseMotionListen
         // 文字列表示化
         progress.setStringPainted(true);
 
-        centerPanel.removeAll();
-        centerPanel.setLayout(new BorderLayout());
+        mainPanel.removeAll();
 
         prgContainer = new JPanel();
         GridBagLayout layout = new GridBagLayout(); 
         prgContainer.setLayout(layout);
+
         GridBagConstraints gbc = new GridBagConstraints();
+        JLabel label = new JLabel(" ");
         gbc.gridx = 0;
+        gbc.gridy = 0;
+        layout.setConstraints(label, gbc);
+        prgContainer.add(label);
+
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
         gbc.gridy = 0;
         layout.setConstraints(progress, gbc);
         prgContainer.add(progress);
 
-        prgPanel = new JPanel();
-        prgPanel.setLayout(new BorderLayout());
-        prgPanel.add(prgContainer, BorderLayout.LINE_START);
-
-        centerPanel.add(prgPanel, BorderLayout.WEST);
+        mainPanel.add(prgContainer, BorderLayout.LINE_START);
         revalidate();
         repaint();
     }
 
+    /**
+     * 更新进度显示。
+     * 
+     * @param n 1～100的值。
+     */
     public void setProgressValue(int n) {
         progress.setValue(n);
         if (n == 100) {
-            prgContainer.remove(progress);
-            prgPanel.remove(prgContainer);
-            centerPanel.remove(prgPanel);
+            prgContainer.removeAll();
+            mainPanel.removeAll();
+            mainPanel.add(mainContainer, BorderLayout.LINE_START);
             revalidate();
             repaint();
-            centerPanel.add(mainPanel, BorderLayout.WEST);
         }
     }
 

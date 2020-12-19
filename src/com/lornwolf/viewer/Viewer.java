@@ -93,7 +93,6 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         new Viewer();
     }
 
@@ -341,14 +340,14 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
                     section = null;
                 }
 
-                /* 试验用代码 开始 */
+                /* 试验用代码 开始*/
                 System.out.println(String.valueOf(pageId));
                 try (FileOutputStream fileOuputStream = new FileOutputStream("D:/test.txt")) {
                     fileOuputStream.write(os.toByteArray());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                /* 试验用代码 结束 */
+                /*试验用代码 结束 */
 
                 os.close();
                 break;

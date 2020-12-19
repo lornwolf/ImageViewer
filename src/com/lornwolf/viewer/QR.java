@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import com.lornwolf.common.Utils;
 
 public class QR extends JDialog {
+
     private JPanel mainPanel;
     private JPanel downPanel;
     private JLabel console;
