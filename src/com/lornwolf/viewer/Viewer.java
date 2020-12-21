@@ -82,6 +82,7 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
     public List<Section> images = new ArrayList<Section>();
 
     public static void main( String[] args) throws IOException, ClassNotFoundException {
+        System.setProperty("sun.java2d.noddraw", "true");
         try {
             org.jb2011.lnf.beautyeye.BeautyEyeLNFHelper.launchBeautyEyeLNF();
             UIManager.put("RootPane.setupButtonVisible", false);
