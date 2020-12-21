@@ -104,7 +104,7 @@ public class ImagePanel extends JPanel {
 
     private JLabel genJpegPanel(Section section) {
         try {
-            InputStream src = new ByteArrayInputStream(hexToByteArr(section.getContent()));
+            InputStream src = new ByteArrayInputStream(Utils.hexToByteArr(section.getContent()));
             image = ImageIO.read((ByteArrayInputStream) src);
 
             /* 测试用代码。
@@ -151,7 +151,7 @@ public class ImagePanel extends JPanel {
     }
 
     private JLabel genGifPanel(Section section) {
-        byte[] src = hexToByteArr(section.getContent());
+        byte[] src = Utils.hexToByteArr(section.getContent());
         ImageIcon image = new ImageIcon(src);
         JLabel imageLabel = new JLabel(image);
         imageLabel.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
@@ -168,20 +168,6 @@ public class ImagePanel extends JPanel {
         images.clear();
         UIReleaseUtil.freeSwingObject(this);
         removeAll();
-    }
-
-    private byte[] hexToByteArr(String hexStr) {
-        String HexStr = "0123456789ABCDEF";
-        char[] charArr = hexStr.toCharArray();
-        byte btArr[] = new byte[charArr.length / 2];
-        int index = 0;
-        for (int i = 0; i < charArr.length; i++) {
-            int highBit = HexStr.indexOf(charArr[i]);
-            int lowBit = HexStr.indexOf(charArr[++i]);
-            btArr[index] = (byte) (highBit << 4 | lowBit);
-            index++;
-        }
-        return btArr;
     }
 
     private String unescape(String src) {

@@ -26,4 +26,18 @@ public class Utils {
         originalImage = null;
         return scaledBI;
     }
+
+    public static byte[] hexToByteArr(String hexStr) {
+        String HexStr = "0123456789ABCDEF";
+        char[] charArr = hexStr.toCharArray();
+        byte btArr[] = new byte[charArr.length / 2];
+        int index = 0;
+        for (int i = 0; i < charArr.length; i++) {
+            int highBit = HexStr.indexOf(charArr[i]);
+            int lowBit = HexStr.indexOf(charArr[++i]);
+            btArr[index] = (byte) (highBit << 4 | lowBit);
+            index++;
+        }
+        return btArr;
+    }
 }

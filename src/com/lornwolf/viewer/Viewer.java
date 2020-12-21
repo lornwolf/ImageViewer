@@ -43,10 +43,12 @@ import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
 
 import com.lornwolf.common.UIReleaseUtil;
+import com.lornwolf.common.Utils;
 
 public class Viewer extends SuperFrame implements ComponentListener, ActionListener {
     
@@ -340,14 +342,14 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
                     section = null;
                 }
 
-                /* 试验用代码 开始*/
+                /* 试验用代码 开始
                 System.out.println(String.valueOf(pageId));
                 try (FileOutputStream fileOuputStream = new FileOutputStream("D:/test.txt")) {
                     fileOuputStream.write(os.toByteArray());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                /*试验用代码 结束 */
+                试验用代码 结束 */
 
                 os.close();
                 break;
@@ -425,12 +427,55 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
         }
     }
 
+    /**
+     * 保存当前页面的所有图片。
+     * 
+     * @param path 保存路径。
+     */
+    public void savePictures(String path) {
+        if (!path.endsWith(java.io.File.separator)) {
+            path = path + java.io.File.separator;
+        }
+        String folderName = statusBar.getText().replace("\\", "").replace("/", "").replace(":", "").replace("?", "").replace("*", "").replace("<", "").replace(">", "").replace("|", "");
+        File folder = new File(path + folderName);
+        if (!folder.exists() || !folder.isDirectory()) {
+            if (!folder.mkdir()) {
+                JOptionPane.showConfirmDialog(this, "failed to create the folder.", "Message", JOptionPane.CLOSED_OPTION, 1);
+                return;
+            }
+        }
+        int imgCnt = (int) images.stream().filter(o -> "image".equals(o.getType())).count();
+        if (imgCnt == 0) {
+            JOptionPane.showConfirmDialog(this, "no image to export.", "Message", JOptionPane.CLOSED_OPTION, 1);
+            return;
+        }
+        int count = 1;
+        for (Section section : images) {
+            if ("image".equals(section.getType())) {
+                try (FileOutputStream fileOuputStream = new FileOutputStream(path + folderName + java.io.File.separator + String.format("%02d", count) + "." + section.getImageType())) {
+                    fileOuputStream.write(Utils.hexToByteArr(section.getContent()));
+                } catch (IOException e) {
+                    JOptionPane.showConfirmDialog(this, e.getMessage(), "Error", JOptionPane.CLOSED_OPTION, 1);
+                    // 更新进度。
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            setProgressValue(100);
+                        }
+                    });
+                    return;
+                }
+                count++;
+            }
+        }
+        JOptionPane.showConfirmDialog(this, "OK.", "Message", JOptionPane.CLOSED_OPTION, 1);
+    }
+
     public void initProgressBar() {
         this.titleBar.initProgressBar();
     }
 
     public void setProgressValue(int n) {
-    	this.titleBar.setProgressValue(n);
+        this.titleBar.setProgressValue(n);
     }
 
     public JPanel getMainPanel() {

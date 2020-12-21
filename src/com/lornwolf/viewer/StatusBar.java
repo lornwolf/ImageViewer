@@ -48,16 +48,20 @@ import com.lornwolf.common.UIReleaseUtil;
 @SuppressWarnings("serial")
 public class StatusBar extends JPanel implements MouseListener, MouseMotionListener {
 
+    // 左侧的文字标签。 
     private JLabel view;
+    // 
     private Point mouseDownCompCoords = null;
+    // 调整窗口大小的图标按钮。
     private JButton resize = null;
+    // 主窗口对象。
     private Viewer mainWindow = null;
     // 全屏幕标记。
     private boolean fullScreenFlag = false;
     // 图片显示模式。
     private int imgMode = 0;
 
-    // 左侧标题栏的宽度。
+    // 主窗口左侧标题栏的宽度。
     final int TITLE_WIDTH = 300;
     JScrollPane scrollPane;
     List<String[]> tableData = new ArrayList<String[]>();
@@ -189,6 +193,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
 
         JLabel label01 = new JLabel(" ");
         JLabel label02 = new JLabel(" ");
+        JLabel label03 = new JLabel(" ");
 
         JComboBox<String> modeSelector = new JComboBox<String>(new String[] {"自动适应", "原始大小"});;
         modeSelector.setFont(new Font("YaHei Mono", 0, 12));
@@ -227,6 +232,40 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         layout.setConstraints(label02, gbc);
         rightContainer.add(label02);
         
+        JButton save = new JButton("保存图片");
+        save.setMargin(new Insets(4, 4, 4, 4));
+        save.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // 读取配置文件·。
+                String folder = null;
+                String settingFile = "/properties/environment.ini";
+                folder = PropertyUtil.readProperties(settingFile, "SAVE_FOLDER");
+                // 选择目录。
+                JFileChooser filechooser = new JFileChooser();
+                filechooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                if (folder != null) {
+                    filechooser.setCurrentDirectory(new File(folder));
+                }
+                int selected = filechooser.showOpenDialog(mainWindow);
+                if (selected == JFileChooser.APPROVE_OPTION){
+                    File file = filechooser.getSelectedFile();
+                    PropertyUtil.setProperties(settingFile, "SAVE_FOLDER", file.getAbsolutePath());
+                    mainWindow.savePictures(file.getAbsolutePath());
+                }
+            }
+        });
+        gbc = new GridBagConstraints();
+        gbc.gridx = 4;
+        gbc.gridy = 0;
+        layout.setConstraints(save, gbc);
+        rightContainer.add(save);
+        
+        gbc = new GridBagConstraints();
+        gbc.gridx = 5;
+        gbc.gridy = 0;
+        layout.setConstraints(label03, gbc);
+        rightContainer.add(label03);
+        
         JButton money = new JButton("打赏作者");
         money.setMargin(new Insets(4, 4, 4, 4));
         money.addActionListener(new ActionListener() {
@@ -235,7 +274,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
             }
         });
         gbc = new GridBagConstraints();
-        gbc.gridx = 4;
+        gbc.gridx = 6;
         gbc.gridy = 0;
         layout.setConstraints(money, gbc);
         rightContainer.add(money);
