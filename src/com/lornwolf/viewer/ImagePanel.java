@@ -31,7 +31,6 @@ public class ImagePanel extends JPanel {
     private int width;
     private BufferedImage image = null;
     private JLabel imageLabel = null;
-    private List<ImageIcon> images = new ArrayList<ImageIcon>();
     private List<JEditorPane> textLines = new ArrayList<JEditorPane>();
 
     public ImagePanel(List<Section> images, Viewer mainWindow, int width) throws IOException {
@@ -67,12 +66,12 @@ public class ImagePanel extends JPanel {
                         label.setEditable(false);
                         label.setFont(new Font("YaHei Mono", 0, 16));
                         add(label);
-                        textLines.add(label);
+                        ImagePanel.this.addTextLines(label);
                     } else if (line.getType().equals("image")) {
                         if (line.getImageType().equals("jpeg")) {
-                            imageLabel = ImagePanel.this.genJpegPanel(line);
+                            imageLabel = ImagePanel.this.genJpegPanel(line, ImagePanel.this.mainWindow);
                         } else if (line.getImageType().equals("gif")) {
-                            imageLabel = ImagePanel.this.genGifPanel(line);
+                            imageLabel = ImagePanel.this.genGifPanel(line, ImagePanel.this.mainWindow);
                         } else {
                             imageLabel = new JLabel();
                             imageLabel.setText("不支持的図片格式。");
@@ -102,7 +101,7 @@ public class ImagePanel extends JPanel {
         }.start();
     }
 
-    private JLabel genJpegPanel(Section section) {
+    private JLabel genJpegPanel(Section section, Viewer mainWindow) {
         try {
             InputStream src = new ByteArrayInputStream(Utils.hexToByteArr(section.getContent()));
             image = ImageIO.read((ByteArrayInputStream) src);
@@ -139,7 +138,6 @@ public class ImagePanel extends JPanel {
             image.getGraphics().dispose();
             // 生成图片标签对象。
             JLabel imageLabel = new JLabel(imageIcon);
-            images.add(imageIcon);
             imageLabel.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
             imageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             src.close();
@@ -150,7 +148,7 @@ public class ImagePanel extends JPanel {
         return null;
     }
 
-    private JLabel genGifPanel(Section section) {
+    private JLabel genGifPanel(Section section, Viewer mainWindow) {
         byte[] src = Utils.hexToByteArr(section.getContent());
         ImageIcon image = new ImageIcon(src);
         JLabel imageLabel = new JLabel(image);
@@ -162,10 +160,6 @@ public class ImagePanel extends JPanel {
 
     public void close() {
         textLines.clear();
-        for (ImageIcon imageIcon : images) {
-            imageIcon.getImage().flush();
-        }
-        images.clear();
         UIReleaseUtil.freeSwingObject(this);
         removeAll();
     }
@@ -221,4 +215,15 @@ public class ImagePanel extends JPanel {
             line.setMaximumSize(dimension);
         }
     }
+
+	public List<JEditorPane> getTextLines() {
+		return textLines;
+	}
+
+	public void addTextLines(JEditorPane line) {
+		if (this.textLines == null) {
+			this.textLines = new ArrayList<JEditorPane>();
+		}
+		textLines.add(line);
+	}
 }

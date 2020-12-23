@@ -14,7 +14,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -22,13 +24,17 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.DeflaterOutputStream;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -37,9 +43,12 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
+
+import org.jb2011.lnf.beautyeye.ch3_button.BEButtonUI;
 
 import com.bulenkov.iconloader.IconLoader;
 import com.lornwolf.common.PropertyUtil;
@@ -50,7 +59,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
 
     // 左侧的文字标签。 
     private JLabel view;
-    // 
+    // 调整窗口大小时，鼠标按下的位置。
     private Point mouseDownCompCoords = null;
     // 调整窗口大小的图标按钮。
     private JButton resize = null;
@@ -65,7 +74,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
     final int TITLE_WIDTH = 300;
     JScrollPane scrollPane;
     List<String[]> tableData = new ArrayList<String[]>();
-    String[] columnNames = {"標題"};
+    String[] columnNames = {"标题"};
 
     public StatusBar(Viewer mainWindow) {
         this.mainWindow = mainWindow;
@@ -74,7 +83,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
 
         view = new JLabel();
         view.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
-        view.setFont(new Font("YaHei Mono", 0, 16));
+        view.setFont(new Font("YaHei Mono", 0, 14));
         view.setForeground(Color.GRAY);
         add(view);
 
@@ -125,25 +134,8 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
                         connection.close();
 
                         JTable table = new JTable();
-                        table.setModel(new DefaultTableModel() {
-                            @Override
-                            public boolean isCellEditable(int row, int column) {
-                                // 设置为不可编辑。
-                                return false;
-                            }
-                            public String getColumnName(int col) {
-                                return columnNames[col].toString();
-                            }
-                            public int getRowCount() { return tableData.size(); }
-                            public int getColumnCount() { return columnNames.length; }
-                            public Object getValueAt(int row, int col) {
-                                return tableData.get(row)[col];
-                            }
-                            public void setValueAt(Object value, int row, int col) {
-                                tableData.get(row)[col] = (String) value;
-                                fireTableCellUpdated(row, col);
-                            }
-                        });
+                        table.setModel(new MyDataModel());
+                        // 设置底色和字体。
                         table.setBackground(new Color(227, 237, 205));
                         table.setFont(new Font("YaHei Mono", 0, 12));
                         // 不显示表头。
@@ -159,10 +151,18 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
                                     return;
                                 }
                                 table.setEnabled(false);
-                                int[] selectedRow = table.getSelectedRows();
-                                mainWindow.pageId = Integer.valueOf(tableData.get(selectedRow[0])[1]);
-                                StatusBar.this.setText(tableData.get(selectedRow[0])[0]);
-                                mainWindow.showPage();
+                                // 获取选中的行（索引）。
+                                int selectedRow = table.getSelectedRow();
+                                if (selectedRow != -1) {
+                                    // 将选中行的ID赋给主窗口。
+                                    mainWindow.setPageId(Integer.valueOf(tableData.get(selectedRow)[1]));
+                                    // 将选中行的文字在状态栏显示。
+                                    StatusBar.this.setText(tableData.get(selectedRow)[0]);
+                                    // 显示主要内容。
+                                    mainWindow.showPage();
+                                    // 把选中行的索引值赋给主窗口。
+                                    mainWindow.setSelectedRow(selectedRow);
+                                }
                                 table.setEnabled(true);
                             }
                         });
@@ -172,16 +172,21 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
                         TableColumn column = columnModel.getColumn(0);
                         column.setPreferredWidth(TITLE_WIDTH);
 
+                        // 先释放左侧面板的资源。
                         if (scrollPane != null) {
                             UIReleaseUtil.freeSwingObject(scrollPane);
                             mainWindow.getContentPane().remove(scrollPane);
                         }
+                        // 将列表控件放入滚动面板。
                         scrollPane = new JScrollPane(table);
                         scrollPane.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, Color.GRAY));
                         // 设置鼠标滚轮灵敏度。
                         scrollPane.getVerticalScrollBar().setUnitIncrement(36);
                         scrollPane.setPreferredSize(new Dimension(TITLE_WIDTH + 2 + ((Integer)(UIManager.get("ScrollBar.width"))).intValue(), table.getHeight()));
+                        // 将滚动面板在画面左侧显示。
                         mainWindow.getContentPane().add(scrollPane, BorderLayout.LINE_START);
+                        mainWindow.setTable(table);
+                        mainWindow.setSelectedRow(-1);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -194,6 +199,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         JLabel label01 = new JLabel(" ");
         JLabel label02 = new JLabel(" ");
         JLabel label03 = new JLabel(" ");
+        JLabel label04 = new JLabel(" ");
 
         JComboBox<String> modeSelector = new JComboBox<String>(new String[] {"自动适应", "原始大小"});;
         modeSelector.setFont(new Font("YaHei Mono", 0, 12));
@@ -259,13 +265,70 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         gbc.gridy = 0;
         layout.setConstraints(save, gbc);
         rightContainer.add(save);
-        
+
         gbc = new GridBagConstraints();
         gbc.gridx = 5;
         gbc.gridy = 0;
         layout.setConstraints(label03, gbc);
         rightContainer.add(label03);
-        
+
+        JButton delete = new JButton("删除记录");
+        delete.setMargin(new Insets(4, 4, 4, 4));
+        delete.setForeground(Color.WHITE);
+        delete.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.red));
+        delete.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (mainWindow == null || mainWindow.path == null || mainWindow.path.length() == 0 || mainWindow.getPageId() == -1 || mainWindow.getSelectedRow() == -1) {
+                    return;
+                }
+                Object[] options = {"好的", "算了"};
+                int confirm = JOptionPane.showOptionDialog(null,
+                        "真的要删除吗？",
+                        "确认",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        new ImageIcon(this.getClass().getResource("/com/lornwolf/viewer/icons/confirm.png")),
+                        options,
+                        1);
+                if (confirm == 0) {
+                    try {
+                        // 删除数据。
+                        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + mainWindow.path);
+                        String sql = "DELETE FROM  资料库 WHERE fid = ?;";
+                        PreparedStatement stmt = connection.prepareStatement(sql);
+                        stmt.setInt(1, mainWindow.getPageId());
+                        stmt.executeUpdate();
+                        sql = "DELETE FROM  标题 WHERE id = ?;";
+                        stmt = connection.prepareStatement(sql);
+                        stmt.setInt(1, mainWindow.getPageId());
+                        stmt.executeUpdate();
+                        connection.close();
+                        // 更新列表。
+                        ((MyDataModel) mainWindow.getTable().getModel()).removeRow(mainWindow.getSelectedRow());
+                        // 释放资源。
+                        mainWindow.clearImages();
+                        mainWindow.setPageId(-1);
+                        mainWindow.setSelectedRow(-1);
+                        JOptionPane.showConfirmDialog(mainWindow, "删除成功。", "Message", JOptionPane.CLOSED_OPTION, 1);
+                    } catch(Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showConfirmDialog(mainWindow, ex.getMessage(), "删除失败", JOptionPane.CLOSED_OPTION, 1);
+                    }
+                }
+            }
+        });
+        gbc = new GridBagConstraints();
+        gbc.gridx = 6;
+        gbc.gridy = 0;
+        layout.setConstraints(delete, gbc);
+        rightContainer.add(delete);
+
+        gbc = new GridBagConstraints();
+        gbc.gridx = 7;
+        gbc.gridy = 0;
+        layout.setConstraints(label04, gbc);
+        rightContainer.add(label04);
+
         JButton money = new JButton("打赏作者");
         money.setMargin(new Insets(4, 4, 4, 4));
         money.addActionListener(new ActionListener() {
@@ -274,7 +337,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
             }
         });
         gbc = new GridBagConstraints();
-        gbc.gridx = 6;
+        gbc.gridx = 8;
         gbc.gridy = 0;
         layout.setConstraints(money, gbc);
         rightContainer.add(money);
@@ -326,11 +389,11 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         Point currCoords = e.getLocationOnScreen();
         int width = currCoords.x - mainWindow.getLocation().x + (int) resize.getSize().getWidth() - (int) mouseDownCompCoords.getX() + 5;
         int height = currCoords.y - mainWindow.getLocation().y + (int) resize.getSize().getHeight() - (int) mouseDownCompCoords.getY() + 5;
-        if (width < 200) {
-            width = 200;
+        if (width < 800) {
+            width = 800;
         }
-        if (height < 200) {
-            height = 200;
+        if (height < 600) {
+            height = 600;
         }
         mainWindow.setSize(width, height);
     }
@@ -390,5 +453,29 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
 
     public int getImgMode() {
         return imgMode;
+    }
+
+    private class MyDataModel extends DefaultTableModel {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            // 设置为不可编辑。
+            return false;
+        }
+        public String getColumnName(int col) {
+            return columnNames[col].toString();
+        }
+        public int getRowCount() { return tableData.size(); }
+        public int getColumnCount() { return columnNames.length; }
+        public Object getValueAt(int row, int col) {
+            return tableData.get(row)[col];
+        }
+        public void setValueAt(Object value, int row, int col) {
+            tableData.get(row)[col] = (String) value;
+            fireTableCellUpdated(row, col);
+        }
+        public void removeRow(int row) {
+            tableData.remove(row);
+            fireTableRowsDeleted(row, row);
+        }
     }
 }

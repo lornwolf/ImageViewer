@@ -42,16 +42,18 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.FontUIResource;
 
 import com.lornwolf.common.UIReleaseUtil;
 import com.lornwolf.common.Utils;
 
 public class Viewer extends SuperFrame implements ComponentListener, ActionListener {
-    
+
     private static final long serialVersionUID = 1L;
 
     // 滚动条的宽度。
@@ -72,8 +74,14 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
     // 右侧显示内容的滚动面板。
     public JScrollPane scrollPane;
 
+    // 右侧显示内容的JTable控件。
+    private JTable table;
+
     // 当前选中页的ID。
-    public int pageId = 0;
+    private int pageId = -1;
+
+    // 当前选中的JTable的行索引。
+    private int selectedRow = -1;
 
     // 数据库文件的路径。
     public String path = null;
@@ -369,13 +377,29 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
     }
 
     public void back() {
-        pageId = pageId - 1;
+        selectedRow = selectedRow - 1;
+        if (selectedRow < 0) {
+            titleBar.getBackPage().setEnabled(false);
+            return;
+        } else {
+            titleBar.getPrevPage().setEnabled(true);
+        }
+        pageId = Integer.parseInt((String) table.getModel().getValueAt(selectedRow, 1));
         showPage();
+        table.setRowSelectionInterval(selectedRow, selectedRow);
     }
 
     public void forward() {
-        pageId = pageId + 1;
+        selectedRow = selectedRow + 1;
+        if (selectedRow >= table.getModel().getRowCount()) {
+            titleBar.getPrevPage().setEnabled(false);
+            return;
+        } else {
+            titleBar.getBackPage().setEnabled(true);
+        }
+        pageId = Integer.parseInt((String) table.getModel().getValueAt(selectedRow, 1));
         showPage();
+        table.setRowSelectionInterval(selectedRow, selectedRow);
     }
 
     public void reload() {
@@ -471,6 +495,14 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
         JOptionPane.showConfirmDialog(this, "OK.", "Message", JOptionPane.CLOSED_OPTION, 1);
     }
 
+    public void clearImages() {
+        if (mainPanel != null) {
+            UIReleaseUtil.freeSwingObject(mainPanel);
+            revalidate();
+            repaint();
+        }
+    }
+
     public void initProgressBar() {
         this.titleBar.initProgressBar();
     }
@@ -485,5 +517,29 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
 
     public StatusBar getStatusBar() {
         return statusBar;
+    }
+
+    public JTable getTable() {
+        return table;
+    }
+
+    public void setTable(JTable table) {
+        this.table = table;
+    }
+
+    public int getPageId() {
+        return pageId;
+    }
+
+    public void setPageId(int pageId) {
+        this.pageId = pageId;
+    }
+
+    public int getSelectedRow() {
+        return selectedRow;
+    }
+
+    public void setSelectedRow(int selectedRow) {
+        this.selectedRow = selectedRow;
     }
 }
