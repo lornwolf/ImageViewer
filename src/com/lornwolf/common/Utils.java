@@ -6,7 +6,22 @@ import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
+import com.google.common.base.CharMatcher;
+
 public class Utils {
+
+    /**
+     * 去除空格处理。
+     * 
+     * @param str 処理対象。
+     * @return 処理結果。
+     */
+    public static String trimWhitespace(String str) {
+        if (str == null || str.length() == 0) {
+            return str;
+        }
+        return CharMatcher.anyOf("\r\n\t \u00A0　‭").trimFrom(str);
+    }
 
     public static BufferedImage createResizedCopy(Image originalImage, 
         int scaledWidth, int scaledHeight, boolean preserveAlpha) {

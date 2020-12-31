@@ -288,6 +288,7 @@ public class TitleBar extends JPanel implements MouseListener, MouseMotionListen
             prgContainer.removeAll();
             mainPanel.removeAll();
             mainPanel.add(mainContainer, BorderLayout.LINE_START);
+            mainFrame.enable(true);
             revalidate();
             repaint();
         }
@@ -303,5 +304,14 @@ public class TitleBar extends JPanel implements MouseListener, MouseMotionListen
 
     public JButton getPrevPage() {
         return prevPage;
+    }
+
+    public void enable(boolean flag) {
+        backPage.setEnabled(flag);
+        prevPage.setEnabled(flag);
+        reload.setEnabled(flag);
+        minBtn.setEnabled(flag);
+        maxBtn.setEnabled(flag);
+        closeBtn.setEnabled(flag);
     }
 }

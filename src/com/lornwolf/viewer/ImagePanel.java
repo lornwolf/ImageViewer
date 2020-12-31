@@ -61,7 +61,7 @@ public class ImagePanel extends JPanel {
                     Section line = images.get(i);
                     if (line.getType().equals("string")) {
                         JEditorPane label = new JEditorPane();
-                        label.setText("    " + decode(line.getContent()).replace(" ", ""));
+                        label.setText("    " + Utils.trimWhitespace(decode(line.getContent())));
                         label.setBackground(new Color(234, 234, 239));
                         label.setEditable(false);
                         label.setFont(new Font("YaHei Mono", 0, 16));

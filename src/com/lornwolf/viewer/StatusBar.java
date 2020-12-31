@@ -14,9 +14,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -24,7 +22,6 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.zip.DeflaterOutputStream;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -32,7 +29,6 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -43,7 +39,6 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -70,6 +65,12 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
     // 图片显示模式。
     private int imgMode = 0;
 
+    JButton selectFile;
+    JComboBox<String> modeSelector;
+    JButton save;
+    JButton delete;
+    JButton money;
+
     // 主窗口左侧标题栏的宽度。
     final int TITLE_WIDTH = 300;
     JScrollPane scrollPane;
@@ -91,7 +92,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         right.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
 
         String iconPath = "/com/lornwolf/viewer/icons/";
-        JButton selectFile = new JButton(IconLoader.getIcon(iconPath + "select.png"));
+        selectFile = new JButton(IconLoader.getIcon(iconPath + "select.png"));
         selectFile.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // 读取配置文件·。
@@ -201,13 +202,14 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         JLabel label03 = new JLabel(" ");
         JLabel label04 = new JLabel(" ");
 
-        JComboBox<String> modeSelector = new JComboBox<String>(new String[] {"自动适应", "原始大小"});;
+        modeSelector = new JComboBox<String>(new String[] {"自动适应", "原始大小"});;
         modeSelector.setFont(new Font("YaHei Mono", 0, 12));
         modeSelector.setSelectedIndex(0);
         imgMode = 0;
         modeSelector.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 imgMode = modeSelector.getSelectedIndex();
+                mainWindow.showPage();
             }
         });
 
@@ -238,7 +240,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         layout.setConstraints(label02, gbc);
         rightContainer.add(label02);
         
-        JButton save = new JButton("保存图片");
+        save = new JButton("保存图片");
         save.setMargin(new Insets(4, 4, 4, 4));
         save.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -272,7 +274,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         layout.setConstraints(label03, gbc);
         rightContainer.add(label03);
 
-        JButton delete = new JButton("删除记录");
+        delete = new JButton("删除记录");
         delete.setMargin(new Insets(4, 4, 4, 4));
         delete.setForeground(Color.WHITE);
         delete.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.red));
@@ -329,7 +331,7 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
         layout.setConstraints(label04, gbc);
         rightContainer.add(label04);
 
-        JButton money = new JButton("打赏作者");
+        money = new JButton("打赏作者");
         money.setMargin(new Insets(4, 4, 4, 4));
         money.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -453,6 +455,15 @@ public class StatusBar extends JPanel implements MouseListener, MouseMotionListe
 
     public int getImgMode() {
         return imgMode;
+    }
+
+    public void enable(boolean flag) {
+        selectFile.setEnabled(flag);
+        modeSelector.setEnabled(flag);
+        save.setEnabled(flag);
+        delete.setEnabled(flag);
+        resize.setEnabled(flag);
+        money.setEnabled(flag);
     }
 
     private class MyDataModel extends DefaultTableModel {

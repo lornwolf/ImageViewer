@@ -46,7 +46,6 @@ import javax.swing.JTable;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.FontUIResource;
 
 import com.lornwolf.common.UIReleaseUtil;
@@ -238,6 +237,7 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
             imagePanel.close();
         }
 
+        enable(false);
         // 定义需忽略的内容。
         String[] ignore = {".JPG", ".GIF"};
 
@@ -422,10 +422,15 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
     @Override
     public void componentResized(ComponentEvent e) {
         if (mainPanel != null && imagePanel != null) {
-            // 设置图像面板的大小。
-            imagePanel.setSize((int) mainPanel.getSize().getWidth() - SCROLL_WIDTH, (int) mainPanel.getSize().getHeight() - SCROLL_WIDTH);
-            // 调整图像面板中文字行的宽度。 
-            imagePanel.onResize();
+            // 判断是不是自适应模式。
+            if (getStatusBar().getImgMode() == 0) {
+                showPage();
+            } else {
+                // 设置图像面板的大小。
+                imagePanel.setSize((int) mainPanel.getSize().getWidth() - SCROLL_WIDTH, (int) mainPanel.getSize().getHeight() - SCROLL_WIDTH);
+                // 调整图像面板中文字行的宽度。 
+                imagePanel.onResize();
+            }
         }
     }
 
@@ -501,6 +506,11 @@ public class Viewer extends SuperFrame implements ComponentListener, ActionListe
             revalidate();
             repaint();
         }
+    }
+
+    public void enable(boolean flag) {
+        statusBar.enable(flag);
+        titleBar.enable(flag);
     }
 
     public void initProgressBar() {
